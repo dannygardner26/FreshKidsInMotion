@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // User messages - users can only read their own messages
+    match /user_messages/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && hasAdminRole();
+    }
+
+    // Admin-only collections
+    match /admin_messages/{document=**} {
+      allow read, write: if request.auth != null && hasAdminRole();
+    }
+
+    // Public announcements - readable by all authenticated users
+    match /announcements/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && hasAdminRole();
+    }
+
+    // Helper function to check admin role
+    function hasAdminRole() {
+      return request.auth.token.email in [
+        'kidsinmotion0@gmail.com',
+        'danny@dannygardner.com'
+      ] ||
+      request.auth.token.admin == true;
+    }
+  }
+}
